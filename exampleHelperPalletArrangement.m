@@ -34,4 +34,4 @@ goalLoc(3) = cornerLocation(3) + (layerID-1)*boxDim + boxDim/2;
 
 goalLoc = double([goalLoc(1) goalLoc(2) goalLoc(3)]);
 
-end
+end 

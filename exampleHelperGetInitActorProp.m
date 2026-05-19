@@ -37,7 +37,4 @@ objLoc3 = double(actor3.Translation) + boxCenterLoc;
     
 % Convert to SL frame
 palletLoc = [objLoc3(1) -objLoc3(2) objLoc3(3)];
-
-
 end
-
