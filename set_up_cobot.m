@@ -30,4 +30,3 @@ gripper = loadrobot("robotiqEPick4CupVacuumAssembly", Dataformat="row");
 % Add the gripper to the tree
 addSubtree(rbt,'tool0',gripper);
 open_system("PalletizeBoxesUsingCobot.slx");
-sim("PalletizeBoxesUsingCobot.slx");
