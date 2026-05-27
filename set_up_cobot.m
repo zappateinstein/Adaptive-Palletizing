@@ -1,5 +1,5 @@
 boxDim = 0.2;
-maxNumOfBoxes = 30;
+maxNumOfBoxes = 20;
 boxPosition = [-0.65 0.65 0.6];
 % Setup the rigidBodyTree
 rbt = rigidBodyTree(MaxNumBodies=14,DataFormat="row");
