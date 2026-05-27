@@ -18,4 +18,3 @@ if isempty(World.Root.findBy('ActorName',['collBox' num2str(id)],'first'))
 end
 
 end
-
