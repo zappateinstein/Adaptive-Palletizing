@@ -25,8 +25,8 @@ if graspState == true
     boxCenterJnt = rigidBodyJoint('boxCenterJoint','fixed');
     setFixedTransform(boxCenterJnt,trvec2tform([0 0 0])); % Overlap with current end-effector
     boxCenter.Joint = boxCenterJnt;
-    cBox = collisionBox(1.1*boxDim,boxDim,1.1*boxDim);
-    cBox.Pose = trvec2tform([0 -boxDim/2-0.1 0]);
+    cBox = collisionBox(1.1*boxDim(1),boxDim(2),1.1*boxDim(3));
+    cBox.Pose = trvec2tform([0 -boxDim(2)/2-0.1 0]);
 
     addCollision(boxCenter,cBox);
     addBody(robot,boxCenter,'4cup_assembly')
