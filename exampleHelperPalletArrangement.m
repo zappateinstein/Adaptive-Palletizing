@@ -30,7 +30,7 @@ colID =  mod(idInLayer-1,nCols)+1;
 % Convert this to position information based on box dimension
 goalLoc = zeros(1,3);
 goalLoc(1) = cornerLocation(1) - (rowID-1)*boxDimxy(1) - boxDimxy(1)/2;
-goalLoc(2) = cornerLocation(2) - (colID-1)*boxDimxy(1) - boxDimxy(1)/2;
+goalLoc(2) = cornerLocation(2) - (colID-1)*boxDimxy(2) - boxDimxy(2)/2;
 goalLoc(3) = cornerLocation(3) + (layerID-1)*boxDim(3) + boxDim(3)/2;
 
 goalLoc = double([goalLoc(1) goalLoc(2) goalLoc(3)]);
