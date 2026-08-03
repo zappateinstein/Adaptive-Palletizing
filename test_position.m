@@ -1,32 +1,69 @@
-boxDim = 0.2;
-maxNumOfBoxes = 30;
-boxPosition = [-0.65 0.65 0.6];
-% Setup the rigidBodyTree
-rbt = rigidBodyTree(MaxNumBodies=14,DataFormat="row");
-rbt.BaseName = 'world';
+% reproPlannerCall.m
+% Assumes you ran the Simulink model and created these workspace variables:
+% graspState_ws, startConfig_ws, goalConfig_ws, ID_ws, boxPosition_ws, boxDim_ws, maxNumOfBoxes_ws
 
-% Define the base of the robot as a raised platform 
-extBase = rigidBody('externalBase','MaxNumCollisions',1);
-if(coder.target('MATLAB'))
-    addVisual(extBase,"box",[0.25,0.25,0.5],trvec2tform([0,0,-0.25]));
+% --- Helper to extract last sample or value ---
+getLast = @(x) (isstruct(x) && isfield(x,'signals') && isfield(x.signals,'values')) ...
+    * 0; % placeholder to keep MATLAB editor happy
+
+% Robust extractor for common To Workspace outputs (Array or timeseries or struct)
+function val = lastValue(wsVar)
+    if istable(wsVar)
+        val = wsVarend ;
+    elseif isstruct(wsVar) && isfield(wsVar,'signals') && isfield(wsVar.signals,'values')
+        val = wsVar.signals.values(end, :);
+    elseif isa(wsVar, 'timeseries')
+        val = wsVar.Data(end, :);
+    elseif isnumeric(wsVar)
+        if isvector(wsVar)
+            val = wsVar(end);
+        else
+            val = wsVar(:,end);
+        end
+    else
+        % fallback: try last element
+        try
+            val = wsVar(end);
+        catch
+            error('Cannot extract last value from variable of type %s', class(wsVar));
+        end
+    end
 end
-addCollision(extBase,collisionBox(0.25,0.25,0.5),trvec2tform([0,0,-0.25]));
-extBaseJnt = rigidBodyJoint('externalBaseJoint','fixed');
-setFixedTransform(extBaseJnt,trvec2tform([0 0 0.5]));
-extBase.Joint = extBaseJnt;
 
-% Add base to the tree
-addBody(rbt,extBase,'world')
+% --- Extract values (modify variable names if you used different ones) ---
+graspState = lastValue(out.graspState_ws);
+startConfig = lastValue(out.startConfig_ws);
+goalConfig = lastValue(out.goalConfig_ws);
+ID = lastValue(out.ID_ws);
+boxPosition = lastValue(out.boxPosition_ws);
 
-% Load the robot rigidBodyTree
-urrobot = loadrobot("universalUR10e",DataFormat="row");
+% Display what we will send to the planner
+disp('Inputs about to be passed to exampleHelperManipulatorRRT:');
+disp('graspState ='); disp(graspState);
+disp('startConfig ='); disp(startConfig);
+disp('goalConfig ='); disp(goalConfig);
+disp('ID ='); disp(ID);
+disp('boxPosition ='); disp(boxPosition);
+disp('boxDim ='); disp(boxDim);
+disp('maxNumOfBoxes ='); disp(maxNumOfBoxes);
 
-% Add the robot tree to the base 
-addSubtree(rbt,'externalBase',urrobot)
+% --- Call the helper planner and catch the error for diagnostics ---
+try
+    [plan, numSamples] = exampleHelperManipulatorRRT(graspState, startConfig, goalConfig, ID, boxPosition, boxDim, maxNumOfBoxes);
+    disp('Planner returned a plan (no error).');
+    disp(['numSamples: ' num2str(numSamples)]);
+catch ME
+    disp('Planner threw an error. Full error info:');
+    disp(ME.message);
+    disp('Stack trace:');
+    for k = 1:numel(ME.stack)
+        fprintf('  %s (line %d) -> %s\n', ME.stack(k).file, ME.stack(k).line, ME.stack(k).name);
+    end
 
-% Load the gripper rigidBodyTree
-gripper = loadrobot("robotiqEPick4CupVacuumAssembly", Dataformat="row");
+    % If the cause is the manipulatorRRT collision error, show collision detail if available
+    % manipulatorRRT often reports via robotics.manip.internal.error with a message.
+    % You can also try calling manipulatorRRT directly if available (internal signature may differ).
+end
 
-% Add the gripper to the tree
-addSubtree(rbt,'tool0',gripper);
-show(rbt);
+% Optional: visualize the Cartesian goal pose in the 3D world by spawning a helper actor
+% (This depends on how the example helper API exposes spawning; you can also manually inspect Add1.Out1 in the model.)

@@ -40,4 +40,3 @@ palletLoc = [objLoc3(1) -objLoc3(2) objLoc3(3)];
 
 
 end
-

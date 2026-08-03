@@ -15,9 +15,6 @@ if isempty(World.Root.findBy('ActorName',['collBox' num2str(id)],'first'))
     %Box.Physics = true;
     Box.Collisions = true;
     Box.Parent = World.Root.findBy('ActorName','Warehouse','first');
-    %view = createViewpoint(World);
-    %view.Translation = [-4.5 0 1];
-    %setView(World,view);
 end
 
 end
