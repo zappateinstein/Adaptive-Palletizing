@@ -2,7 +2,8 @@ function collisionArraySubset = exampleHelperGetCollisionEnvironment(ID,graspSta
 %exampleHelperGetCollisionEnvironment Set up the collision environment for the planner
 
 %   Copyright 2024 The MathWorks, Inc.
-
+boxPosition = reshape(double(boxPosition),1,3);   % NEW: force row-vector shape
+boxDim      = reshape(double(boxDim),1,3);        % NEW: same safeguard for boxDim
 persistent collisionArray
 coder.varsize('collisionArray',[1,50]);
 
@@ -14,7 +15,8 @@ if isempty(collisionArray)
     % Initialize a cell array of collisionBoxes placed away from the robot
     for i=coder.unroll(1:50)
         if i<=maxNumOfBoxes+3
-        collisionArray{end+1} = collisionBox(boxDim,boxDim,boxDim,Pose=trvec2tform([3,3,0]));
+        % In the initialization loop:
+        collisionArray{end+1} = collisionBox(boxDim(1),boxDim(2),boxDim(3),Pose=trvec2tform([3,3,0]));
         end
     end
 
@@ -39,9 +41,10 @@ if isempty(collisionArray)
     collisionArray{3}.Pose = trvec2tform(palletLoc);
     
     % Update the collisionBox for box0
-    collisionArray{4}.X = boxDim;
-    collisionArray{4}.Y = boxDim;
-    collisionArray{4}.Z = boxDim;
+    % Updating box slot 4:
+    collisionArray{4}.X = boxDim(1);
+    collisionArray{4}.Y = boxDim(2);
+    collisionArray{4}.Z = boxDim(3);
     collisionArray{4}.Pose = trvec2tform(boxPosition);
 end
 
