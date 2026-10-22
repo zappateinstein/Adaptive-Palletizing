@@ -1,4 +1,4 @@
-function [fixedDimInterpPlan,numComputedSamples] = exampleHelperManipulatorRRT(graspState, startConfig,goalConfig,ID,boxPosition, boxDim, maxNumOfBoxes)
+function [fixedDimInterpPlan,numComputedSamples] = exampleHelperManipulatorRRT(graspState, startConfig,goalConfig,ID,boxPosition, boxDim, boxWeight, maxNumOfBoxes)
 %EXAMPLEHELPERMANIPULATORRRT This helper sets up the collision environment
 % and uses manipulatorRRT for collision-free planning
 %
@@ -27,32 +27,44 @@ if graspState == true
     W = boxDim(2);
     H = boxDim(3);
     cBox = collisionBox(1.1*L, W, 1.1*H);
-    cBox.Pose = trvec2tform([0 -W/2-0.1 0]);
+    maxLateralOffset = 0.15;  % meters — cap so offset can't grow unbounded with width
+    lateralOffset = min(W/2 + 0.1, maxLateralOffset);
+    cBox.Pose = trvec2tform([0 -lateralOffset 0]);
     addCollision(boxCenter,cBox);
+    m = double(boxWeight);
+    boxCenter.Mass = m;
+    boxCenter.CenterOfMass = [0 -lateralOffset 0];        % matches the collision box offset
+    boxCenter.Inertia = [m/12*(W^2+H^2), m/12*(L^2+H^2), m/12*(L^2+W^2), 0, 0, 0]; % solid-box inertia
+ 
     addBody(robot,boxCenter,'4cup_assembly')
 end
-
 % Extract the updated collision environment for the planner
 collisionEnv = exampleHelperGetCollisionEnvironment(ID,graspState,boxDim,boxPosition,maxNumOfBoxes,baseLoc,baseDim,benchDim,benchLoc,palletDim,palletLoc);
+
 % Setup the planner
 planner = manipulatorRRT(robot,collisionEnv);
+
 planner.IgnoreSelfCollision = false;
 planner.SkippedSelfCollisions = "Parent";
 planner.MaxConnectionDistance = 0.3;
 planner.ValidationDistance = 0.05;
+
 % For repeatable results, seed the random number generator and store
 % the current seed value.
 prevseed = rng(0);
-goalQ = goalConfig;
-% use goalQ as the goal for planning from here
-[planOut, ~] = planner.plan(startConfig(:)', goalQ(:)');
+
+% Plan and interpolate.
+
+[planOut, ~] = planner.plan(startConfig(:)',goalConfig(:)');
 shortenedPlan = planner.shorten(planOut, 5);
 numOfInterp = floor((NUMPATHSAMPLES - size(shortenedPlan,1))/(size(shortenedPlan,1)-1));
 interpolatedPlan = planner.interpolate(shortenedPlan,numOfInterp);
 numComputedSamples = size(interpolatedPlan,1);
+
 % Move the samples into one of fixed dimension
 fixedDimInterpPlan = zeros(NUMDOF, NUMPATHSAMPLES);
 fixedDimInterpPlan(:,1:numComputedSamples) = interpolatedPlan(1:numComputedSamples,:)';
+
 % Pad the end of the output matrix with the goal state if the
 % interpolated plan doesn't have enough samples
 if numComputedSamples < NUMPATHSAMPLES
@@ -60,6 +72,8 @@ if numComputedSamples < NUMPATHSAMPLES
 else
     fixedDimInterpPlan = fixedDimInterpPlan(:,1:NUMPATHSAMPLES);
 end
+
 % Restore the random number generator to the previously stored seed.
 rng(prevseed);
+
 end

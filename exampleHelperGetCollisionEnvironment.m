@@ -2,10 +2,20 @@ function collisionArraySubset = exampleHelperGetCollisionEnvironment(ID,graspSta
 %exampleHelperGetCollisionEnvironment Set up the collision environment for the planner
 
 %   Copyright 2024 The MathWorks, Inc.
-boxPosition = reshape(double(boxPosition),1,3);   % NEW: force row-vector shape
-boxDim      = reshape(double(boxDim),1,3);        % NEW: same safeguard for boxDim
+boxPosition = reshape(double(boxPosition),1,3);   % force row-vector shape
+boxDim      = reshape(double(boxDim),1,3);        % same safeguard for boxDim
 persistent collisionArray
 coder.varsize('collisionArray',[1,50]);
+
+% NEW: remember each box's OWN dimensions, indexed by box id, so a
+% previously-placed box's position is never recomputed using a
+% DIFFERENT (current) box's dimensions.
+persistent boxDimHistory
+coder.varsize('boxDimHistory',[50,3]);
+if isempty(boxDimHistory)
+    boxDimHistory = zeros(50,3);
+end
+boxDimHistory(ID+1,:) = boxDim;   % record the current box's own dims
 
 % Initialize the collision environment with the existing actors
 if isempty(collisionArray)
@@ -57,10 +67,14 @@ if graspState == false
     if ID < maxNumOfBoxes
         collisionArray{ID+4}.Pose = trvec2tform(boxPosition);
     end
-    % Simultaneously update the position of the dropped box 
+    % Simultaneously update the position of the dropped box
     % (There is no dropped box at the first time step)
-    if ID>=1 
-        droppedBoxPoseUpdate = exampleHelperPalletArrangement(ID-1,palletDim,palletLoc,boxDim);
+    if ID>=1
+        % FIXED: use box (ID-1)'s OWN recorded dimensions, not the
+        % current box's dimensions, so its collision-checking position
+        % doesn't silently drift whenever box sizes vary between calls.
+        prevBoxDim = boxDimHistory(ID,:);   % box (ID-1) -> index ID (1-based, since ID starts at 0)
+        droppedBoxPoseUpdate = exampleHelperPalletArrangement(ID-1,palletDim,palletLoc,prevBoxDim);
         collisionArray{ID+3}.Pose = trvec2tform(droppedBoxPoseUpdate);
     end
 end
