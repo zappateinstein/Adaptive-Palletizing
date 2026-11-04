@@ -30,7 +30,7 @@ for i=1:numel(collIdxArray)
     
     % Convert to SL frame
     boxPose = [objLoc(1) -objLoc(2) objLoc(3)];
-    positionArray(i,3) = boxPose;
+    positionArray(i,:) = boxPose;
 end
 
 end

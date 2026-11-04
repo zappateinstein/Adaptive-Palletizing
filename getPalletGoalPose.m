@@ -17,7 +17,7 @@ function bloc = getPalletGoalPose(ID, bDim)
         bDimSLWorld = double([bDim bDim bDim])';
     end
     
-    bLoc = exampleHelperPalletArrangement(pLocSLWorld,pDimSLWorld,bDimSLWorld,ID);
+    bLoc = exampleHelperPalletArrangement(ID,pLocSLWorld,pDimSLWorld,bDimSLWorld);
     bloc = double(bLoc)';
       
 end
