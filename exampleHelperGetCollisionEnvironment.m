@@ -5,15 +5,15 @@ function collisionArraySubset = exampleHelperGetCollisionEnvironment(ID,graspSta
 boxPosition = reshape(double(boxPosition),1,3);   % force row-vector shape
 boxDim      = reshape(double(boxDim),1,3);        % same safeguard for boxDim
 persistent collisionArray
-coder.varsize('collisionArray',[1,50]);
+coder.varsize('collisionArray',[1,130]);
 
 % NEW: remember each box's OWN dimensions, indexed by box id, so a
 % previously-placed box's position is never recomputed using a
 % DIFFERENT (current) box's dimensions.
 persistent boxDimHistory
-coder.varsize('boxDimHistory',[50,3]);
+coder.varsize('boxDimHistory',[130,3]);
 if isempty(boxDimHistory)
-    boxDimHistory = zeros(50,3);
+    boxDimHistory = zeros(130,3);
 end
 boxDimHistory(ID+1,:) = boxDim;   % record the current box's own dims
 
@@ -23,7 +23,7 @@ if isempty(collisionArray)
     collisionArray = cell(1,0);
     
     % Initialize a cell array of collisionBoxes placed away from the robot
-    for i=coder.unroll(1:50)
+    for i=coder.unroll(1:130)
         if i<=maxNumOfBoxes+3
         % In the initialization loop:
         collisionArray{end+1} = collisionBox(boxDim(1),boxDim(2),boxDim(3),Pose=trvec2tform([3,3,0]));
@@ -89,8 +89,8 @@ end
 
 % Trim the unused boxes
 collisionArraySubset = cell(1,0);
-for i = coder.unroll(1:50)
-    if i <= ID+4
+for i=coder.unroll(1:130)
+    if i <= min(ID+4, maxNumOfBoxes+3)   % never read past the last box slot
         collisionArraySubset{end+1} = collisionArray{i};
     end
 end
